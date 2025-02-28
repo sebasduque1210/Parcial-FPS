@@ -5,7 +5,7 @@ using UnityEngine;
 public class Logicapersonaje1 : MonoBehaviour
 
 {
-    public float velocidadMovimiento = 5.0f;
+    public float velocidadMovimiento = 15.0f;
     float velocidadRotacion = 200.0f;
     private Animator anim;
     float x, y;

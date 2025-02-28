@@ -18,28 +18,37 @@ public class Enemigo1 : MonoBehaviour
     public float distancia_ataque;
     public float radio_vision;
     public float speed;
+
     // Start is called before the first frame update
     void Start()
     {
         ani = GetComponent<Animator>();
-        target = GameObject.Find("Link");
+        target = GameObject.Find("Mutant");
+        agente = GetComponent<NavMeshAgent>();
     }
 
     // Update is called once per frame
+    void Update()
+    {
+        Comportamiento_enemigo();
+    }
 
     public void Comportamiento_enemigo()
     {
+        float distancia = Vector3.Distance(transform.position, target.transform.position);
 
-        if (Vector3.Distance(transform.position, target.transform.position) > radio_vision)
+        if (distancia > radio_vision) // Si el jugador está fuera de la visión del enemigo
         {
             agente.enabled = false;
             ani.SetBool("run", false);
-            cronometro += 1 * Time.deltaTime;
+            cronometro += Time.deltaTime;
+
             if (cronometro >= 4)
             {
                 rutina = Random.Range(0, 2);
                 cronometro = 0;
             }
+
             switch (rutina)
             {
                 case 0:
@@ -56,62 +65,49 @@ public class Enemigo1 : MonoBehaviour
                     ani.SetBool("walk", true);
                     break;
             }
-
-
-
         }
-
-        else
+        else // Si el jugador está en el rango de visión
         {
-            var lookPos = target.transform.position - transform.position;
-            lookPos.y = 0;
-            var rotation = Quaternion.LookRotation(lookPos);
-
             agente.enabled = true;
             agente.SetDestination(target.transform.position);
+            transform.LookAt(target.transform.position);
 
-            if (Vector3.Distance(transform.position, target.transform.position) > distancia_ataque && !atacando)
+            if (distancia > distancia_ataque && !atacando) // Persigue al jugador
             {
-
                 ani.SetBool("walk", false);
                 ani.SetBool("run", true);
-
             }
-            else
+            else if (!atacando) // Si está en distancia de ataque
             {
-                ani.SetBool("attack", true);
-                atacando = true;
-                if (!atacando)
-                {
-                    transform.rotation = Quaternion.RotateTowards(transform.rotation, rotation, 1);
-                    ani.SetBool("walk", false);
-                    ani.SetBool("run", false);
-                }
+                StartCoroutine(RealizarAtaque());
             }
         }
-        if (atacando)
-        {
-            
-            agente.enabled = false;
+    }
 
+    IEnumerator RealizarAtaque()
+    {
+        atacando = true;
+        ani.SetBool("attack", true);
+        ani.SetBool("run", false);
+        ani.SetBool("walk", false);
+        agente.enabled = false;
+
+        yield return new WaitForSeconds(0.5f); // Ajustar tiempo para el golpe
+
+        if (Vector3.Distance(transform.position, target.transform.position) <= distancia_ataque)
+        {
+            target.GetComponent<vidajugador>().restarvida(10); // Aplica daño al jugador
         }
+
+        yield return new WaitForSeconds(1f); // Esperar antes de otro ataque
+        Final_ani();
     }
 
     public void Final_ani()
     {
-        if (Vector3.Distance(transform.position, target.transform.position) > distancia_ataque + 0.2f)
-        {
-            ani.SetBool("attack", false);
-
-        }
-       
+        ani.SetBool("attack", false);
         atacando = false;
-
-
-    }
-    
-    void Update()
-    {
-        Comportamiento_enemigo();
+        agente.enabled = true;
     }
 }
+
